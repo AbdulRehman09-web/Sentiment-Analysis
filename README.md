@@ -1,5 +1,4 @@
-# Sentiment-Analysis
-# 📊 Sentiment Studio — Large CSV Sentiment Analysis App
+# 📊 Sentiment-Analysis
 
 A **Streamlit-based Sentiment Analysis App** designed specifically for **large CSV files (200MB+)**. This app supports **sample-based training**, **incremental streaming training**, and **real-time prediction** using scikit-learn models.
 
