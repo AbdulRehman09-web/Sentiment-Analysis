@@ -27,11 +27,6 @@ share/python-wheels/
 MANIFEST
 myenv/
 Reviews.csv
-tfidf_vectorizer.pkl
-PF-AI Project Proposal.pdf
-PF-AI Project Proposal.docx
-best_sentiment_model.pkl
-app.py
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
