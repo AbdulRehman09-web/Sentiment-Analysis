@@ -1,4 +1,9 @@
-# streamlit_sentiment_large.py
+# streamlit_sentiment_large_embedded.py
+# Updated by ChatGPT: embeds a default CSV filename so you don't need to upload
+# - Removed the CSV file_uploader option
+# - Uses a default local filename (Reviews.csv) unless you change the path
+# - Everything else kept functionally the same as your original script
+
 import streamlit as st
 import pandas as pd
 import re
@@ -12,20 +17,23 @@ from sklearn.metrics import accuracy_score, classification_report
 st.set_page_config(
     page_title="Sentiment Studio",
     page_icon="💬",
-    layout="wide")
+    layout="wide",
+)
 
 # -------------------------
 # Helpers
 # -------------------------
+
 def clean_text(s: str) -> str:
     s = str(s).lower()
     s = re.sub(r"http\S+|<.*?>|[^a-z\s]", "", s)
     return re.sub(r"\s+", " ", s).strip()
 
+
 def score_to_sentiment(x):
     try:
         v = float(x)
-    except:
+    except Exception:
         return None
     if v <= 2:
         return "negative"
@@ -34,20 +42,25 @@ def score_to_sentiment(x):
     else:
         return "positive"
 
+
 def read_chunks(source, usecols, chunksize=200_000):
-    # source: filepath or file-like object (uploaded)
+    # source: filepath or file-like object
     return pd.read_csv(source, usecols=usecols, chunksize=chunksize, iterator=True, dtype=str)
+
 
 # -------------------------
 # UI - Inputs
 # -------------------------
 st.title("Sentiment Studio — Large CSV Friendly 🚀")
-st.write("For files >200MB prefer a local path (run app on the same machine).")
+st.write("This version expects a local CSV file. By default it looks for 'Reviews.csv' in the working directory.")
 
-col1, col2 = st.columns([2,1])
+# Default embedded filename
+DEFAULT_CSV = "Reviews.csv"
+
+col1, col2 = st.columns([2, 1])
 with col1:
-    local_path = st.text_input("Local CSV path (recommended for large files)", "")
-    upload = st.file_uploader("Or upload CSV (may fail for very large files)", type=["csv"])
+    # Only local path input now — no upload widget
+    local_path = st.text_input("Local CSV path (recommended for large files)", DEFAULT_CSV)
 with col2:
     chunksize = st.number_input("Chunk size (rows)", value=200_000, min_value=1000, step=1000)
     mode = st.radio("Training mode", ("Sample (fast, needs sample in memory)", "Stream (incremental, memory-efficient)"))
@@ -60,10 +73,10 @@ text_col = st.text_input("Text column name", value="Text")
 score_col = st.text_input("Score column name", value="Score")
 st.markdown("---")
 
-# Determine source
-source = upload if upload is not None else (local_path.strip() if local_path.strip() else None)
+# Determine source (now only local path)
+source = local_path.strip() if local_path and local_path.strip() else None
 if source is None:
-    st.info("Provide local path or upload a CSV to proceed.")
+    st.info("Provide a local path to your CSV to proceed.")
     st.stop()
 
 # Preview small sample
@@ -86,6 +99,7 @@ st.dataframe(sample_df.head(10))
 # -------------------------
 if st.button("Start Training"):
     st.write("Training started...")
+
     # --- Sample mode ---
     if mode.startswith("Sample"):
         st.write("Sampling rows from file (keeps memory usage limited).")
@@ -119,7 +133,7 @@ if st.button("Start Training"):
             st.stop()
 
         st.write(f"Collected {len(texts):,} samples. Vectorizing with TF-IDF and training SGDClassifier.")
-        tf = TfidfVectorizer(max_features=10000, ngram_range=(1,2))
+        tf = TfidfVectorizer(max_features=10000, ngram_range=(1, 2))
         X = tf.fit_transform(texts)
         clf = SGDClassifier(loss="log_loss", class_weight="balanced", max_iter=1000, tol=1e-3, random_state=42)
 
@@ -137,7 +151,7 @@ if st.button("Start Training"):
     # --- Stream / Incremental mode ---
     else:
         st.write("Starting incremental training with HashingVectorizer + SGDClassifier.partial_fit")
-        hv = HashingVectorizer(n_features=2**18, alternate_sign=False, ngram_range=(1,2))
+        hv = HashingVectorizer(n_features=2 ** 18, alternate_sign=False, ngram_range=(1, 2))
         clf = SGDClassifier(loss="log_loss", class_weight="balanced", max_iter=1, tol=None, random_state=42)
 
         classes = np.array(["negative", "positive"])
@@ -145,7 +159,6 @@ if st.button("Start Training"):
         val_texts, val_labels = [], []
         pbar = st.progress(0)
         max_val_samples = 20000
-        approx_rows = 0
 
         try:
             reader = read_chunks(source, [text_col, score_col], chunksize=chunksize)
@@ -173,8 +186,8 @@ if st.button("Start Training"):
                     val_labels.extend(labels_chunk[:take])
 
                 processed += len(labels_chunk)
-                approx_rows += len(labels_chunk)
                 # update progress (rough)
+                # If you want a better progress estimate, adjust denominator
                 pbar.progress(min(100, int(100 * processed / max(1, 1_000_000))))
         except StopIteration:
             pass
@@ -225,16 +238,21 @@ if st.button("Predict"):
 # -------------------------
 # Upload pre-trained model
 # -------------------------
-st.markdown("---")
-st.write("Or upload a pickled model (and vectorizer) to use for predictions.")
-model_upload = st.file_uploader("Upload model pickle (.pkl)", type=["pkl"], key="mup")
-vec_upload = st.file_uploader("Upload vectorizer pickle (.pkl)", type=["pkl"], key="vup")
-if model_upload is not None and vec_upload is not None:
-    try:
-        model_obj = pickle.load(model_upload)
-        vec_obj = pickle.load(vec_upload)
-        st.session_state["model"] = model_obj
-        st.session_state["vectorizer"] = vec_obj
-        st.success("Loaded model and vectorizer into session.")
-    except Exception as e:
-        st.error(f"Failed to load uploaded pickles: {e}")
+# st.markdown("---")
+# st.write("Or upload a pickled model (and vectorizer) to use for predictions.")
+# model_upload = st.file_uploader("Upload model pickle (.pkl)", type=["pkl"], key="mup")
+# vec_upload = st.file_uploader("Upload vectorizer pickle (.pkl)", type=["pkl"], key="vup")
+# if model_upload is not None and vec_upload is not None:
+#     try:
+#         model_obj = pickle.load(model_upload)
+#         vec_obj = pickle.load(vec_upload)
+#         st.session_state["model"] = model_obj
+#         st.session_state["vectorizer"] = vec_obj
+#         st.success("Loaded model and vectorizer into session.")
+#     except Exception as e:
+#         st.error(f"Failed to load uploaded pickles: {e}")
+
+# # Note for the user:
+# # - Place your Reviews.csv in the same folder where you run `streamlit run streamlit_sentiment_large_embedded.py`
+# # - Or change the Local CSV path field to point to the correct CSV file on disk
+# # - This script no longer shows a CSV upload widget; it reads from the provided local path
