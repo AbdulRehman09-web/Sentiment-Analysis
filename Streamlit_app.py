@@ -1,9 +1,3 @@
-# streamlit_sentiment_large_embedded.py
-# Updated by ChatGPT: embeds a default CSV filename so you don't need to upload
-# - Removed the CSV file_uploader option
-# - Uses a default local filename (Reviews.csv) unless you change the path
-# - Everything else kept functionally the same as your original script
-
 import streamlit as st
 import pandas as pd
 import re
@@ -233,25 +227,3 @@ if st.button("Predict"):
         if hasattr(st.session_state["model"], "predict_proba"):
             prob = st.session_state["model"].predict_proba(vec).max()
         st.markdown(f"### Prediction: **{pred.upper()}**" + (f" — confidence: {prob:.2%}" if prob is not None else ""))
-
-# -------------------------
-# Upload pre-trained model
-# -------------------------
-# st.markdown("---")
-# st.write("Or upload a pickled model (and vectorizer) to use for predictions.")
-# model_upload = st.file_uploader("Upload model pickle (.pkl)", type=["pkl"], key="mup")
-# vec_upload = st.file_uploader("Upload vectorizer pickle (.pkl)", type=["pkl"], key="vup")
-# if model_upload is not None and vec_upload is not None:
-#     try:
-#         model_obj = pickle.load(model_upload)
-#         vec_obj = pickle.load(vec_upload)
-#         st.session_state["model"] = model_obj
-#         st.session_state["vectorizer"] = vec_obj
-#         st.success("Loaded model and vectorizer into session.")
-#     except Exception as e:
-#         st.error(f"Failed to load uploaded pickles: {e}")
-
-# # Note for the user:
-# # - Place your Reviews.csv in the same folder where you run `streamlit run streamlit_sentiment_large_embedded.py`
-# # - Or change the Local CSV path field to point to the correct CSV file on disk
-# # - This script no longer shows a CSV upload widget; it reads from the provided local path
