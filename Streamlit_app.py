@@ -51,8 +51,7 @@ def read_chunks(source, usecols, chunksize=200_000):
 # -------------------------
 # UI - Inputs
 # -------------------------
-st.title("Sentiment Studio — Large CSV Friendly 🚀")
-st.write("This version expects a local CSV file. By default it looks for 'Reviews.csv' in the working directory.")
+st.title("Sentiment Studio 🚀")
 
 # Default embedded filename
 DEFAULT_CSV = "Reviews.csv"
